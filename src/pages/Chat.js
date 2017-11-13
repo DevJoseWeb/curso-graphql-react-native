@@ -1,5 +1,8 @@
 /* Core */
-import React from 'react';
+import React, { Component } from 'react';
+
+import { graphql } from 'react-apollo';
+import gql from 'graphql-tag';
 
 /* Presentational */
 import {
@@ -10,6 +13,7 @@ import {
   StyleSheet,
   Dimensions,
   ScrollView,
+  ActivityIndicator,
   KeyboardAvoidingView,
 } from 'react-native';
 
@@ -17,65 +21,54 @@ import Input from './components/Input';
 
 StatusBar.setBarStyle('light-content');
 
-const Chat = () => (
-  <KeyboardAvoidingView
-    style={styles.container}
-    behavior={Platform.OS === 'ios' ? 'padding' : null}
-  >
-    <ScrollView
-      contentContainerStyle={styles.conversation}
-      keyboardDismissMode={Platform.OS === 'android' ? 'on-drag' : 'interactive'}
-      keyboardShouldPersistTaps="never"
-    >
-      <View style={[styles.bubble, styles['bubble-right']]}>
-        <Text style={styles.author}>Diego</Text>
-        <Text style={styles.message}>Opa galera, testando a mensagem!</Text>
-      </View>
+const author = 'Diego';
 
-      <View style={[styles.bubble, styles['bubble-left']]}>
-        <Text style={styles.author}>Diego</Text>
-        <Text style={styles.message}>Opa galera, testando a mensagem como resposta com um texto bem grande!</Text>
-      </View>
+class Chat extends Component {
+  componentDidMount() {
+    setTimeout(() => {
+      this._scrollView.scrollToEnd({ animated: false });
+    }, 0);
+  }
 
-      <View style={[styles.bubble, styles['bubble-right']]}>
-        <Text style={styles.author}>Diego</Text>
-        <Text style={styles.message}>Opa galera, testando a mensagem!</Text>
+  renderChat = () => (
+    this.props.conversation.allMessages.map(item => (
+      <View
+        key={item.id}
+        style={[
+          styles.bubble,
+          item.from === author
+            ? styles['bubble-right']
+            : styles['bubble-left']
+        ]}
+      >
+        <Text style={styles.author}>{item.from}</Text>
+        <Text style={styles.message}>{item.message}</Text>
       </View>
+    ))
+  );
 
-      <View style={[styles.bubble, styles['bubble-right']]}>
-        <Text style={styles.author}>Diego</Text>
-        <Text style={styles.message}>Opa galera, testando a mensagem!</Text>
-      </View>
+  render() {
+    return (
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : null}
+      >
+        <ScrollView
+          contentContainerStyle={styles.conversation}
+          keyboardDismissMode={Platform.OS === 'android' ? 'none' : 'interactive'}
+          keyboardShouldPersistTaps="never"
+          ref={scrollView => this._scrollView = scrollView}
+        >
+          { this.props.conversation.loading
+            ? <ActivityIndicator style={styles.loading} color="#fff" />
+            : this.renderChat() }
+        </ScrollView>
 
-      <View style={[styles.bubble, styles['bubble-right']]}>
-        <Text style={styles.author}>Diego</Text>
-        <Text style={styles.message}>Opa galera, testando a mensagem!</Text>
-      </View>
-
-      <View style={[styles.bubble, styles['bubble-right']]}>
-        <Text style={styles.author}>Diego</Text>
-        <Text style={styles.message}>Opa galera, testando a mensagem!</Text>
-      </View>
-
-      <View style={[styles.bubble, styles['bubble-right']]}>
-        <Text style={styles.author}>Diego</Text>
-        <Text style={styles.message}>Opa galera, testando a mensagem!</Text>
-      </View>
-
-      <View style={[styles.bubble, styles['bubble-right']]}>
-        <Text style={styles.author}>Diego</Text>
-        <Text style={styles.message}>Opa galera, testando a mensagem!</Text>
-      </View>
-
-      <View style={[styles.bubble, styles['bubble-right']]}>
-        <Text style={styles.author}>Diego</Text>
-        <Text style={styles.message}>Opa galera, testando a mensagem!</Text>
-      </View>
-    </ScrollView>
-
-    <Input />
-  </KeyboardAvoidingView>
-);
+        <Input />
+      </KeyboardAvoidingView>
+    );
+  }
+}
 
 const { width } = Dimensions.get('window');
 
@@ -90,6 +83,10 @@ const styles = StyleSheet.create({
 
   conversation: {
     padding: 10,
+  },
+
+  loading: {
+    marginTop: 20,
   },
 
   bubble: {
@@ -129,4 +126,18 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Chat;
+const ConversationQuery = gql`
+  query {
+    allMessages(
+      orderBy: createdAt_ASC
+    ) {
+      id
+      from
+      message
+    }
+  }
+`;
+
+export default graphql(ConversationQuery, {
+  name: 'conversation',
+})(Chat);
