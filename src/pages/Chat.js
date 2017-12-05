@@ -46,9 +46,9 @@ class Chat extends Component {
         author,
       },
       updateQuery: (prev, { subscriptionData }) => {
-        if (!subscriptionData['Message']) return prev;
+        if (!subscriptionData.data['Message']) return prev;
 
-        const newItem = subscriptionData['Message'].node;
+        const newItem = subscriptionData.data['Message'].node;
 
         return { ...prev, allMessages: [ ...prev.allMessages, newItem ] };
       }
